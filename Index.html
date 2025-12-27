@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的記帳助手</title>
+    <style>
+        :root { --primary: #4a90e2; --income: #27ae60; --expense: #e74c3c; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 15px; margin: 0; }
+        .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 100%; max-width: 450px; margin: auto; box-sizing: border-box; }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        .balance-card { background: var(--primary); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        .balance-card div { font-size: 14px; opacity: 0.9; }
+        .balance-card strong { font-size: 28px; display: block; margin-top: 5px; }
+        
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 14px; color: #666; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        
+        .btn-row { display: flex; gap: 10px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; color: white; font-weight: bold; transition: 0.2s; }
+        .btn-income { background: var(--income); }
+        .btn-expense { background: var(--expense); }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+
+        .history { margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f9f9f9; }
+        .item-info { display: flex; flex-direction: column; }
+        .item-title { font-weight: 500; color: #333; }
+        .item-category { font-size: 12px; color: #999; }
+        .item-amount { font-weight: bold; }
+        .amt-income { color: var(--income); }
+        .amt-expense { color: var(--expense); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>💰 記帳助手</h2>
+    
+    <div class="balance-card">
+        <div>目前餘額</div>
+        <strong>$<span id="total">0.00</span></strong>
+    </div>
+
+    <div class="input-group">
+        <label>項目名稱</label>
+        <input type="text" id="text" placeholder="例如：茶餐廳、出糧">
+    </div>
+
+    <div class="input-group">
+        <label>金額</label>
+        <input type="number" id="amount" placeholder="輸入金額">
+    </div>
+
+    <div class="input-group">
+        <label>分類</label>
+        <select id="category">
+            <option value="飲食">🍔 飲食</option>
+            <option value="交通">🚌 交通</option>
+            <option value="購物">🛍️ 購物</option>
+            <option value="娛樂">🎮 娛樂</option>
+            <option value="入息">💵 入息/薪金</option>
+            <option value="其他">❓ 其他</option>
+        </select>
+    </div>
+
+    <div class="btn-row">
+        <button class="btn-income" onclick="addTransaction('income')">新增收入</button>
+        <button class="btn-expense" onclick="addTransaction('expense')">新增支出</button>
+    </div>
+
+    <div class="history">
+        <h3 style="font-size: 16px; color: #444;">最近紀錄</h3>
+        <div id="list"></div>
+    </div>
+</div>
+
+<script>
+    let transactions = JSON.parse(localStorage.getItem('my_accounts')) || [];
+
+    function updateUI() {
+        const list = document.getElementById('list');
+        const totalDisp = document.getElementById('total');
+        list.innerHTML = '';
+        
+        let total = 0;
+        
+        // 倒序顯示，最新嘅喺上面
+        [...transactions].reverse().forEach((t) => {
+            const isExpense = t.type === 'expense';
+            const item = document.createElement('div');
+            item.className = 'item';
+            
+            item.innerHTML = `
+                <div class="item-info">
+                    <span class="item-title">${t.text}</span>
+                    <span class="item-category">${t.category}</span>
+                </div>
+                <div class="item-amount ${isExpense ? 'amt-expense' : 'amt-income'}">
+                    ${isExpense ? '-' : '+'}$${t.amount.toFixed(2)}
+                </div>
+            `;
+            list.appendChild(item);
+            total += (isExpense ? -t.amount : t.amount);
+        });
+
+        totalDisp.innerText = total.toFixed(2);
+        localStorage.setItem('my_accounts', JSON.stringify(transactions));
+    }
+
+    function addTransaction(type) {
+        const textInput = document.getElementById('text');
+        const amountInput = document.getElementById('amount');
+        const categoryInput = document.getElementById('category');
+
+        const text = textInput.value;
+        const amount = parseFloat(amountInput.value);
+        const category = categoryInput.value;
+
+        if (text.trim() === '' || isNaN(amount) || amount <= 0) {
+            alert('請輸入有效嘅名稱同埋大於 0 嘅金額');
+            return;
+        }
+
+        transactions.push({ text, amount, category, type, time: new Date() });
+        updateUI();
+        
+        textInput.value = '';
+        amountInput.value = '';
+    }
+
+    updateUI();
+</script>
+
+</body>
+</html>
